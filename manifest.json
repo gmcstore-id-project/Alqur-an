@@ -1,0 +1,59 @@
+{
+  "name": "Al-Quran Digital — Versi Madinah",
+  "short_name": "Al-Quran",
+  "description": "Al-Quran Digital lengkap dengan Tafsir, Terjemahan, dan Audio Tilawah",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a5c3a",
+  "theme_color": "#1a5c3a",
+  "lang": "id",
+  "categories": ["education", "lifestyle"],
+  "icons": [
+    {
+      "src": "icons/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Buka Al-Quran",
+      "short_name": "Quran",
+      "description": "Buka Al-Quran Digital",
+      "url": "/index.html"
+    }
+  ]
+}

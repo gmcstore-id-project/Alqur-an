@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Al-Quran Digital — Versi Madinah</title>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-title" content="Al-Quran"/>
+  <meta name="theme-color" content="#1a5c3a"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/scheherazade-new@5/400.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.26.0/dist/tabler-icons.min.css">
+  <style>
+    :root {
+      --bg-primary:   #ffffff;
+      --bg-secondary: #f7f7f5;
+      --bg-tertiary:  #f0efe9;
+      --text-primary: #1a1a1a;
+      --text-secondary: #555550;
+      --text-tertiary:  #999990;
+      --border:       rgba(0,0,0,0.10);
+      --border-md:    rgba(0,0,0,0.18);
+      --r-md: 8px;
+      --r-lg: 12px;
+      --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-ar: "Scheherazade New", "Traditional Arabic", "Arabic Typesetting", serif;
+      --green: #1a5c3a;
+      --gold:  #c8a951;
+    }
+    [data-theme="dark"] {
+      --bg-primary:   #1c1c1e;
+      --bg-secondary: #2c2c2e;
+      --bg-tertiary:  #3a3a3c;
+      --text-primary:   #f2f2f7;
+      --text-secondary: #aeaeb2;
+      --text-tertiary:  #636366;
+      --border:    rgba(255,255,255,0.10);
+      --border-md: rgba(255,255,255,0.20);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; overflow: hidden; }
+    body { font-family: var(--font-ui); background: var(--bg-tertiary); color: var(--text-primary); }
+    button { cursor: pointer; font-family: var(--font-ui); }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 4px; }
+
+    /* ── Layout ─────────────────────────────────── */
+    .app { display: flex; height: 100vh; }
+
+    /* ── Sidebar ─────────────────────────────────── */
+    .sb { width: 272px; background: var(--bg-primary); border-right: 0.5px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+    .sb-brand { padding: 14px 14px 10px; border-bottom: 0.5px solid var(--border); }
+    .sb-brand-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .sb-icon { width: 34px; height: 34px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+    .sb-search { background: var(--bg-secondary); border: 0.5px solid var(--border); border-radius: var(--r-md); color: var(--text-primary); outline: none; padding: 6px 10px; font-size: 13px; width: 100%; }
+    .sb-search:focus { border-color: var(--green); }
+    .tabs { display: flex; border-bottom: 0.5px solid var(--border); }
+    .tab { flex: 1; padding: 9px; font-size: 12px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary); font-weight: 400; }
+    .tab.on { color: var(--green); border-bottom-color: var(--green); font-weight: 500; }
+    .list { flex: 1; overflow-y: auto; }
+    .item { display: flex; align-items: center; gap: 8px; padding: 7px 12px; cursor: pointer; border-left: 3px solid transparent; }
+    .item:hover { background: rgba(26,92,58,0.05); }
+    .item.on { background: rgba(26,92,58,0.08); border-left-color: var(--green); }
+    .nbadge { width: 26px; height: 26px; border-radius: 50%; background: var(--bg-secondary); color: var(--text-secondary); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; flex-shrink: 0; }
+    .nbadge.on { background: var(--green); color: #fff; }
+    .jbadge { border-radius: 5px; }
+
+    /* ── Main ───────────────────────────────────── */
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar { background: var(--bg-primary); border-bottom: 0.5px solid var(--border); padding: 0 18px; display: flex; align-items: center; height: 46px; gap: 10px; flex-shrink: 0; }
+    .topbar-label { flex: 1; font-size: 13px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .surah-hdr { background: var(--green); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .content { flex: 1; overflow-y: auto; padding-bottom: 8px; }
+
+    /* ── Ayah card ──────────────────────────────── */
+    .acard { margin: 8px 14px; background: var(--bg-primary); border-radius: var(--r-lg); border: 0.5px solid var(--border); overflow: hidden; }
+    .acard-hdr { display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; background: var(--bg-secondary); border-bottom: 0.5px solid var(--border); }
+    .acard-arabic { padding: 14px 16px 8px; direction: rtl; text-align: right; font-family: var(--font-ar); color: var(--text-primary); }
+    .acard-trans { padding: 6px 16px 12px; border-top: 0.5px solid var(--border); }
+    .acard-tafsir { padding: 8px 16px 12px; border-top: 0.5px solid var(--border); background: rgba(26,92,58,0.04); }
+    .section-lbl { font-size: 10px; font-weight: 500; color: var(--green); margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+
+    /* ── Buttons ─────────────────────────────────── */
+    .ibtn { border-radius: 50%; border: 0.5px solid var(--green); background: transparent; color: var(--green); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ibtn:hover, .ibtn.on { background: var(--green); color: #fff; }
+    .tbtn { font-size: 11px; padding: 3px 9px; border-radius: 20px; display: flex; align-items: center; gap: 3px; background: transparent; color: var(--green); border: 0.5px solid var(--green); }
+    .tbtn.on { background: var(--green); color: #fff; }
+    .topbtn { width: 30px; height: 30px; border-radius: var(--r-md); border: 0.5px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); display: flex; align-items: center; justify-content: center; font-size: 12px; }
+    .topbtn:hover { border-color: var(--green); color: var(--green); }
+
+    /* ── Player bar ──────────────────────────────── */
+    .player { background: var(--green); padding: 10px 18px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .player-icon { width: 38px; height: 38px; border-radius: 50%; background: var(--gold); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .progress-track { width: 100px; height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+    .progress-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.4s; }
+
+    /* ── Welcome ─────────────────────────────────── */
+    .welcome { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 32px; text-align: center; }
+    .feat-chips { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .chip { padding: 7px 14px; background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--r-md); display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
+    .bismillah { text-align: center; padding: 20px 20px 8px; font-family: var(--font-ar); font-size: 28px; color: var(--green); direction: rtl; }
+    .loader { padding: 56px; text-align: center; color: var(--text-secondary); font-size: 14px; }
+
+    /* ── Surah play bar ──────────────────────────────── */
+    .surah-play-bar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: var(--bg-secondary); border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
+    .surah-play-btn { display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; border: 0.5px solid var(--green); background: transparent; color: var(--green); font-size: 12px; font-weight: 500; font-family: var(--font-ui); cursor: pointer; transition: all 0.15s; }
+    .surah-play-btn:hover, .surah-play-btn.playing { background: var(--green); color: #fff; }
+    .surah-progress { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .surah-progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.4s; }
+    .surah-progress-lbl { font-size: 10px; color: var(--text-tertiary); flex-shrink: 0; min-width: 60px; text-align: right; }
+
+    /* ── Tafsir Jalalain ─────────────────────────────── */
+    .acard-jalalain { padding: 8px 16px 12px; border-top: 0.5px solid var(--border); background: rgba(26,92,58,0.06); }
+    .acard-hadist { padding: 8px 16px 12px; border-top: 0.5px solid var(--border); background: rgba(200,169,81,0.06); }
+    .hadist-item { margin-bottom: 10px; padding: 8px 10px; border-left: 3px solid var(--gold); background: rgba(200,169,81,0.08); border-radius: 0 6px 6px 0; }
+    .hadist-source { font-size: 10px; font-weight: 600; color: var(--gold); margin-bottom: 3px; display: flex; align-items: center; gap: 4px; }
+    .hadist-text { font-size: 12px; color: var(--text-secondary); line-height: 1.8; }
+    .asbab-item { margin-top: 8px; padding: 8px 10px; border-left: 3px solid var(--green); background: rgba(26,92,58,0.06); border-radius: 0 6px 6px 0; }
+    .asbab-lbl { font-size: 10px; font-weight: 600; color: var(--green); margin-bottom: 3px; display: flex; align-items: center; gap: 4px; }
+    .loading-shimmer { display: inline-block; background: linear-gradient(90deg, var(--border) 25%, var(--border-md) 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 4px; height: 12px; width: 80%; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .expand-btn { font-size: 11px; padding: 3px 9px; border-radius: 20px; display: flex; align-items: center; gap: 3px; background: transparent; color: var(--green); border: 0.5px solid var(--green); cursor: pointer; font-family: var(--font-ui); transition: all 0.15s; }
+    .expand-btn.on { background: var(--green); color: #fff; }
+
+    /* ── Player bar surah info ───────────────────────── */
+    .player-surah-prog { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+
+    /* ── Terjemahan play bar ─────────────────────────── */
+    .trans-play-bar { display: flex; align-items: center; gap: 10px; padding: 7px 14px; background: rgba(200,169,81,0.08); border-bottom: 0.5px solid rgba(200,169,81,0.25); flex-shrink: 0; }
+    .trans-play-btn { display: flex; align-items: center; gap: 6px; padding: 5px 13px; border-radius: 20px; border: 0.5px solid var(--gold); background: transparent; color: var(--gold); font-size: 12px; font-weight: 500; font-family: var(--font-ui); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .trans-play-btn:hover, .trans-play-btn.playing { background: var(--gold); color: #fff; }
+    .trans-progress { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; cursor: pointer; }
+    .trans-progress-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.5s linear; }
+    .trans-time-lbl { font-size: 10px; color: var(--text-tertiary); flex-shrink: 0; min-width: 72px; text-align: right; font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useCallback } = React;
+
+const API   = "https://api.alquran.cloud/v1";
+const AUDIO = "https://cdn.islamic.network/quran/audio/128/ar.alafasy";
+
+/* ── Terjemahan Audio — Mishary Alafasy + Terjemah Indonesia (archive.org) ── */
+const TRANS_BASE = "https://archive.org/download/AlQuran_Indonesian_Translation-RecitationByMishari_Ibn_Rashid_Alafasy";
+const TRANS_FILES = [
+  "001%20-%20Al-Fatihah%20%28%20The%20Opening%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%81%D8%A7%D8%AA%D8%AD%D8%A9.mp3",
+  "002%20-%20Al-Baqarah%20%28%20The%20Cow%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%A8%D9%82%D8%B1%D8%A9.mp3",
+  "003%20-%20Al-Imran%20%28%20The%20Family%20of%20Imran%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A2%D9%84%20%D8%B9%D9%85%D8%B1%D8%A7%D9%86.mp3",
+  "004%20-%20An-Nisa%20%28%20The%20Women%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%86%D8%B3%D8%A7%D8%A1.mp3",
+  "005%20-%20Al-Maidah%20%28%20The%20Table%20spread%20with%20Food%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%85%D8%A7%D8%A6%D8%AF%D8%A9.mp3",
+  "006%20-%20Al-An%27am%20%28%20The%20Cattle%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%A3%D9%86%D8%B9%D8%A7%D9%85.mp3",
+  "007%20-%20Al-A%27raf%20%28The%20Heights%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%A3%D8%B9%D8%B1%D8%A7%D9%81.mp3",
+  "008%20-%20Al-Anfal%20%28%20The%20Spoils%20of%20War%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%A3%D9%86%D9%81%D8%A7%D9%84.mp3",
+  "009%20-%20At-Taubah%20%28%20The%20Repentance%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AA%D9%88%D8%A8%D8%A9.mp3",
+  "010%20-%20Yunus%20%28%20Jonah%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D9%8A%D9%88%D9%86%D8%B3.mp3",
+  "011%20-%20Hud%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D9%87%D9%88%D8%AF.mp3",
+  "012%20-%20Yusuf%20%28Joseph%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D9%8A%D9%88%D8%B3%D9%81.mp3",
+  "013%20-%20Ar-Ra%27d%20%28%20The%20Thunder%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B1%D8%B9%D8%AF.mp3",
+  "014%20-%20Ibrahim%20%28%20Abraham%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A5%D8%A8%D8%B1%D8%A7%D9%87%D9%8A%D9%85.mp3",
+  "015%20-%20Al-Hijr%20%28%20The%20Rocky%20Tract%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AD%D8%AC%D8%B1.mp3",
+  "016%20-%20An-Nahl%20%28%20The%20Bees%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%86%D8%AD%D9%84.mp3",
+  "017%20-%20Al-Isra%20%28%20The%20Night%20Journey%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%A5%D8%B3%D8%B1%D8%A7%D8%A1.mp3",
+  "018%20-%20Al-Kahf%20%28%20The%20Cave%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%83%D9%87%D9%81.mp3",
+  "019%20-%20Maryam%20%28%20Mary%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D9%85%D8%B1%D9%8A%D9%85.mp3",
+  "020%20-%20Taha%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%B7%D9%87.mp3",
+  "021%20-%20Al-Anbiya%20%28%20The%20Prophets%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%A3%D9%86%D8%A8%D9%8A%D8%A7%D8%A1.mp3",
+  "022%20-%20Al-Hajj%20%28%20The%20Pilgrimage%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AD%D8%AC.mp3",
+  "023%20-%20Al-Mu%27minoon%20%28%20The%20Believers%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%85%D8%A4%D9%85%D9%86%D9%88%D9%86.mp3",
+  "024%20-%20An-Noor%20%28%20The%20Light%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%86%D9%88%D8%B1.mp3",
+  "025%20-%20Al-Furqan%20%28The%20Criterion%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%81%D8%B1%D9%82%D8%A7%D9%86.mp3",
+  "026%20-%20Ash-Shuara%20%28%20The%20Poets%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B4%D8%B9%D8%B1%D8%A7%D8%A1.mp3",
+  "027%20-%20An-Naml%20%28The%20Ants%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%86%D9%85%D9%84.mp3",
+  "028%20-%20Al-Qasas%20%28%20The%20Stories%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%82%D8%B5%D8%B5.mp3",
+  "029%20-%20Al-Ankaboot%20%28%20The%20Spider%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B9%D9%86%D9%83%D8%A8%D9%88%D8%AA.mp3",
+  "030%20-%20Ar-Room%20%28%20The%20Romans%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B1%D9%88%D9%85.mp3",
+  "031%20-%20Luqman%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D9%84%D9%82%D9%85%D8%A7%D9%86.mp3",
+  "032%20-%20As-Sajdah%20%28%20The%20Prostration%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B3%D8%AC%D8%AF%D8%A9.mp3",
+  "033%20-%20Al-Ahzab%20%28%20The%20Combined%20Forces%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%A3%D8%AD%D8%B2%D8%A7%D8%A8.mp3",
+  "034%20-%20Saba%20%28%20Sheba%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%B3%D8%A8%D8%A3.mp3",
+  "035%20-%20Fatir%20%28%20The%20Orignator%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D9%81%D8%A7%D8%B7%D8%B1.mp3",
+  "036%20-%20Ya-seen%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D9%8A%D8%B3.mp3",
+  "037%20-%20As-Saaffat%20%28%20Those%20Ranges%20in%20Ranks%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B5%D8%A7%D9%81%D8%A7%D8%AA.mp3",
+  "038%20-%20Sad%20%28%20The%20Letter%20Sad%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%B5.mp3",
+  "039%20-%20Az-Zumar%20%28%20The%20Groups%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B2%D9%85%D8%B1.mp3",
+  "040%20-%20Ghafir%20%28%20The%20Forgiver%20God%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%BA%D8%A7%D9%81%D8%B1.mp3",
+  "041%20-%20Fussilat%20%28%20Explained%20in%20Detail%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D9%81%D8%B5%D9%84%D8%AA.mp3",
+  "042%20-%20Ash-Shura%20%28Consultation%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B4%D9%88%D8%B1%D9%89.mp3",
+  "043%20-%20Az-Zukhruf%20%28%20The%20Gold%20Adornment%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B2%D8%AE%D8%B1%D9%81.mp3",
+  "044%20-%20Ad-Dukhan%20%28%20The%20Smoke%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AF%D8%AE%D8%A7%D9%86.mp3",
+  "045%20-%20Al-Jathiya%20%28%20Crouching%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AC%D8%A7%D8%AB%D9%8A%D8%A9.mp3",
+  "046%20-%20Al-Ahqaf%20%28%20The%20Curved%20Sand-hills%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%A3%D8%AD%D9%82%D8%A7%D9%81.mp3",
+  "047%20-%20Muhammad%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D9%85%D8%AD%D9%85%D8%AF.mp3",
+  "048%20-%20Al-Fath%20%28%20The%20Victory%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%81%D8%AA%D8%AD.mp3",
+  "049%20-%20Al-Hujurat%20%28%20The%20Dwellings%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AD%D8%AC%D8%B1%D8%A7%D8%AA.mp3",
+  "050%20-%20Qaf%20%28%20The%20Letter%20Qaf%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D9%82.mp3",
+  "051%20-%20Adh-Dhariyat%20%28%20The%20Wind%20that%20Scatter%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B0%D8%A7%D8%B1%D9%8A%D8%A7%D8%AA.mp3",
+  "052%20-%20At-Tur%20%28%20The%20Mount%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B7%D9%88%D8%B1.mp3",
+  "053%20-%20An-Najm%20%28%20The%20Star%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%86%D8%AC%D9%85.mp3",
+  "054%20-%20Al-Qamar%20%28%20The%20Moon%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%82%D9%85%D8%B1.mp3",
+  "055%20-%20Ar-Rahman%20%28%20The%20Most%20Graciouse%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B1%D8%AD%D9%85%D9%86.mp3",
+  "056%20-%20Al-Waqi%27ah%20%28%20The%20Event%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%88%D8%A7%D9%82%D8%B9%D8%A9.mp3",
+  "057%20-%20Al-Hadid%20%28%20The%20Iron%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AD%D8%AF%D9%8A%D8%AF.mp3",
+  "058%20-%20Al-Mujadilah%20%28%20She%20That%20Disputeth%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%85%D8%AC%D8%A7%D8%AF%D9%84%D8%A9.mp3",
+  "059%20-%20Al-Hashr%20%28%20The%20Gathering%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AD%D8%B4%D8%B1.mp3",
+  "060%20-%20Al-Mumtahanah%20%28%20The%20Woman%20to%20be%20examined%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%85%D9%85%D8%AA%D8%AD%D9%86%D8%A9.mp3",
+  "061%20-%20As-Saff%20%28%20The%20Row%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B5%D9%81.mp3",
+  "062%20-%20Al-Jumu%27ah%20%28%20Friday%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AC%D9%85%D8%B9%D8%A9.mp3",
+  "063%20-%20Al-Munafiqoon%20%28%20The%20Hypocrites%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%85%D9%86%D8%A7%D9%81%D9%82%D9%88%D9%86.mp3",
+  "064%20-%20At-Taghabun%20%28%20Mutual%20Loss%20%26%20Gain%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AA%D8%BA%D8%A7%D8%A8%D9%86.mp3",
+  "065%20-%20At-Talaq%20%28%20The%20Divorce%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B7%D9%84%D8%A7%D9%82.mp3",
+  "066%20-%20At-Tahrim%20%28%20The%20Prohibition%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AA%D8%AD%D8%B1%D9%8A%D9%85.mp3",
+  "067%20-%20Al-Mulk%20%28%20Dominion%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%85%D9%84%D9%83.mp3",
+  "068%20-%20Al-Qalam%20%28%20The%20Pen%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%82%D9%84%D9%85.mp3",
+  "069%20-%20Al-Haaqqah%20%28%20The%20Inevitable%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AD%D8%A7%D9%82%D8%A9.mp3",
+  "070%20-%20Al-Ma%27arij%20%28The%20Ways%20of%20Ascent%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%85%D8%B9%D8%A7%D8%B1%D8%AC.mp3",
+  "071%20-%20Nooh%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D9%86%D9%88%D8%AD.mp3",
+  "072%20-%20Al-Jinn%20%28%20The%20Jinn%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AC%D9%86.mp3",
+  "073%20-%20Al-Muzzammil%20%28The%20One%20wrapped%20in%20Garments%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%85%D8%B2%D9%85%D9%84.mp3",
+  "074%20-%20Al-Muddaththir%20%28%20The%20One%20Enveloped%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%85%D8%AF%D8%AB%D8%B1.mp3",
+  "075%20-%20Al-Qiyamah%20%28%20The%20Resurrection%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%82%D9%8A%D8%A7%D9%85%D8%A9.mp3",
+  "076%20-%20Al-Insan%20%28%20Man%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%A5%D9%86%D8%B3%D8%A7%D9%86.mp3",
+  "077%20-%20Al-Mursalat%20%28%20Those%20sent%20forth%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%85%D8%B1%D8%B3%D9%84%D8%A7%D8%AA.mp3",
+  "078%20-%20An-Naba%27%20%28%20The%20Great%20News%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%86%D8%A8%D8%A3.mp3",
+  "079%20-%20An-Nazi%27at%20%28%20Those%20who%20Pull%20Out%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%86%D8%A7%D8%B2%D8%B9%D8%A7%D8%AA.mp3",
+  "080%20-%20Abasa%20%28%20He%20frowned%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%B9%D8%A8%D8%B3.mp3",
+  "081%20-%20At-Takwir%20%28%20The%20Overthrowing%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AA%D9%83%D9%88%D9%8A%D8%B1.mp3",
+  "082%20-%20Al-Infitar%20%28%20The%20Cleaving%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%A7%D9%86%D9%81%D8%B7%D8%A7%D8%B1.mp3",
+  "083%20-%20Al-Mutaffifin%20%28Those%20Who%20Deal%20in%20Fraud%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%85%D8%B7%D9%81%D9%81%D9%8A%D9%86.mp3",
+  "084%20-%20Al-Inshiqaq%20%28The%20Splitting%20Asunder%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%A7%D9%86%D8%B4%D9%82%D8%A7%D9%82.mp3",
+  "085%20-%20Al-Burooj%20%28%20The%20Big%20Stars%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%A8%D8%B1%D9%88%D8%AC.mp3",
+  "086%20-%20At-Tariq%20%28%20The%20Night-Comer%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B7%D8%A7%D8%B1%D9%82.mp3",
+  "087%20-%20Al-A%27la%20%28%20The%20Most%20High%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%A3%D8%B9%D9%84%D9%89.mp3",
+  "088%20-%20Al-Ghashiya%20%28%20The%20Overwhelming%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%BA%D8%A7%D8%B4%D9%8A%D8%A9.mp3",
+  "089%20-%20Al-Fajr%20%28%20The%20Dawn%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%81%D8%AC%D8%B1.mp3",
+  "090%20-%20Al-Balad%20%28%20The%20City%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%A8%D9%84%D8%AF.mp3",
+  "091%20-%20Ash-Shams%20%28%20The%20Sun%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B4%D9%85%D8%B3.mp3",
+  "092%20-%20Al-Layl%20%28%20The%20Night%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%84%D9%8A%D9%84.mp3",
+  "093%20-%20Ad-Dhuha%20%28%20The%20Forenoon%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B6%D8%AD%D9%89.mp3",
+  "094%20-%20As-Sharh%20%28%20The%20Opening%20Forth%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B4%D8%B1%D8%AD.mp3",
+  "095%20-%20At-Tin%20%28%20The%20Fig%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AA%D9%8A%D9%86.mp3",
+  "096%20-%20Al-%27alaq%20%28%20The%20Clot%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B9%D9%84%D9%82.mp3",
+  "097%20-%20Al-Qadr%20%28%20The%20Night%20of%20Decree%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%82%D8%AF%D8%B1.mp3",
+  "098%20-%20Al-Bayyinah%20%28%20The%20Clear%20Evidence%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%A8%D9%8A%D9%86%D8%A9.mp3",
+  "099%20-%20Az-Zalzalah%20%28%20The%20Earthquake%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B2%D9%84%D8%B2%D9%84%D8%A9.mp3",
+  "100%20-%20Al-%27adiyat%20%28%20Those%20That%20Run%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B9%D8%A7%D8%AF%D9%8A%D8%A7%D8%AA.mp3",
+  "101%20-%20Al-Qari%27ah%20%28%20The%20Striking%20Hour%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%82%D8%A7%D8%B1%D8%B9%D8%A9.mp3",
+  "102%20-%20At-Takathur%20%28%20The%20piling%20Up%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%AA%D9%83%D8%A7%D8%AB%D8%B1.mp3",
+  "103%20-%20Al-Asr%20%28%20The%20Time%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%B9%D8%B5%D8%B1.mp3",
+  "104%20-%20Al-Humazah%20%28%20The%20Slanderer%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%87%D9%85%D8%B2%D8%A9.mp3",
+  "105%20-%20Al-Fil%20%28%20The%20Elephant%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%81%D9%8A%D9%84.mp3",
+  "106%20-%20Quraish%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D9%82%D8%B1%D9%8A%D8%B4.mp3",
+  "107%20-%20Al-Ma%27un%20%28%20Small%20Kindnesses%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%85%D8%A7%D8%B9%D9%88%D9%86.mp3",
+  "108%20-%20Al-Kauthor%20%28%20A%20River%20in%20Paradise%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%83%D9%88%D8%AB%D8%B1.mp3",
+  "109%20-%20Al-Kafiroon%20%28%20The%20Disbelievers%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%83%D8%A7%D9%81%D8%B1%D9%88%D9%86.mp3",
+  "110%20-%20An-Nasr%20%28%20The%20Help%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%86%D8%B5%D8%B1.mp3",
+  "111%20-%20Al-Masad%20%28%20The%20Palm%20Fibre%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%85%D8%B3%D8%AF.mp3",
+  "112%20-%20Al-Ikhlas%20%28%20Sincerity%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D8%A5%D8%AE%D9%84%D8%A7%D8%B5.mp3",
+  "113%20-%20Al-Falaq%20%28%20The%20Daybreak%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%81%D9%84%D9%82.mp3",
+  "114%20-%20An-Nas%20%28%20Mankind%20%29%20-%20%D8%B3%D9%88%D8%B1%D8%A9%20%D8%A7%D9%84%D9%86%D8%B3.mp3"
+];
+/* helper: get translation audio URL by surah number (1-indexed) */
+function transUrl(num){ return `${TRANS_BASE}/${TRANS_FILES[num-1]}`; }
+
+const JUZ_LABELS = [
+  "الم","سيقول","تلك الرسل","لن تنالوا","والمحصنات",
+  "لا يحب الله","وإذا سمعوا","ولو أننا","قال الملأ","واعلموا",
+  "يعتذرون","وما من دابة","وما أبرئ","ربما","سبحان الذي",
+  "قال ألم","اقترب","قد أفلح","وقال الذين","أمن خلق",
+  "اتل ما أوحي","ومن يقنت","وما لي","فمن أظلم","إليه يرد",
+  "حم","قال فما خطبكم","قد سمع الله","تبارك الذي","عم يتساءلون"
+];
+
+/* ── Helpers ────────────────────────────────────────────── */
+function saveLS(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} }
+function loadLS(k,def){ try{ const v=localStorage.getItem(k); return v!=null?JSON.parse(v):def; }catch{ return def; } }
+
+/* ── App ─────────────────────────────────────────────────── */
+function App() {
+  const [surahs,     setSurahs]     = useState([]);
+  const [selSurah,   setSelSurah]   = useState(null);
+  const [ayahs,      setAyahs]      = useState([]);
+  const [tafsirMap,    setTafsirMap]    = useState({});
+  const [openTafsir,   setOpenTafsir]   = useState({});
+  const [jalalainMap,  setJalalainMap]  = useState({});
+  const [openJalalain, setOpenJalalain] = useState({});
+  const [hadistMap,    setHadistMap]    = useState({});
+  const [openHadist,   setOpenHadist]   = useState({});
+  const [loading,    setLoading]    = useState(false);
+  const [tab,        setTab]        = useState("surah");
+  const [search,     setSearch]     = useState("");
+  const [playingNum, setPlayingNum] = useState(null);
+  const [isPlaying,  setIsPlaying]  = useState(false);
+  const [playingJuz, setPlayingJuz] = useState(null);
+  const [juzProg,    setJuzProg]    = useState({ cur:0, total:0 });
+  const [loadingJuz, setLoadingJuz] = useState(null);
+  const [dark,       setDark]       = useState(() => loadLS("q_dark", false));
+  const [fs,         setFs]         = useState(() => loadLS("q_fs", 26));
+  const [bookmarks,    setBookmarks]    = useState(() => loadLS("q_bm", []));
+  const [playingSurah, setPlayingSurah] = useState(null);
+  const [surahProg,    setSurahProg]    = useState({ cur:0, total:0 });
+  /* ─── Terjemahan audio state ─── */
+  const [transPlaying,  setTransPlaying]  = useState(null);   // surah number playing translation
+  const [transIsPlaying,setTransIsPlaying]= useState(false);
+  const [transCur,      setTransCur]      = useState(0);      // current time seconds
+  const [transDur,      setTransDur]      = useState(0);      // duration seconds
+  const transRef = useRef(null);
+  const audioRef   = useRef(null);
+  const queueRef   = useRef([]);
+  const qIdxRef    = useRef(0);
+  const pJuzRef    = useRef(null);
+  const pSurahRef  = useRef(null);
+  const curInfoRef = useRef(null);
+
+  /* dark mode */
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    saveLS("q_dark", dark);
+  }, [dark]);
+
+  useEffect(() => { saveLS("q_fs", fs); }, [fs]);
+
+  /* initial load */
+  useEffect(() => {
+    fetch(`${API}/surah`).then(r=>r.json()).then(d=>{ setSurahs(d.data||[]); });
+    const last = loadLS("q_last", null);
+    if(last) loadSurah(last);
+  }, []);
+
+  /* keyboard */
+  useEffect(() => {
+    const h = (e) => {
+      if(e.code==="Space" && e.target.tagName!=="INPUT") {
+        e.preventDefault();
+        if(playingNum!==null) doTogglePlay();
+      }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [isPlaying, playingNum]);
+
+  /* ─── Load surah ─── */
+  const loadSurah = async (num) => {
+    setSelSurah(num);
+    setLoading(true);
+    setAyahs([]);
+    setOpenTafsir({});
+    setOpenJalalain({});
+    setOpenHadist({});
+    saveLS("q_last", num);
+    try {
+      const r = await fetch(`${API}/surah/${num}/editions/quran-uthmani,id.indonesian`);
+      const d = await r.json();
+      const [arabic, indo] = d.data;
+      setAyahs(arabic.ayahs.map((a,i)=>({
+        number: a.number,
+        numberInSurah: a.numberInSurah,
+        arabic: a.text,
+        translation: indo.ayahs[i]?.text || "",
+      })));
+    } catch(e) { console.error(e); }
+    setLoading(false);
+  };
+
+  /* ─── Tafsir (Muntakhab) ─── */
+  const toggleTafsir = async (idx, sNum, aNum) => {
+    const key = `${sNum}:${aNum}`;
+    if(!tafsirMap[key]) {
+      setTafsirMap(p=>({...p,[key]:"loading"}));
+      try {
+        const r = await fetch(`${API}/ayah/${sNum}:${aNum}/id.muntakhab`);
+        const d = await r.json();
+        setTafsirMap(p=>({...p,[key]: d.data?.text||"Tafsir tidak tersedia untuk ayat ini."}));
+      } catch {
+        setTafsirMap(p=>({...p,[key]:"Tafsir tidak tersedia."}));
+      }
+    }
+    setOpenTafsir(p=>({...p,[idx]:!p[idx]}));
+  };
+
+  /* ─── Tafsir Jalalain ─── */
+  const toggleJalalain = async (idx, sNum, aNum) => {
+    const key = `${sNum}:${aNum}`;
+    if(!jalalainMap[key]) {
+      setJalalainMap(p=>({...p,[key]:"loading"}));
+      try {
+        const r = await fetch(`${API}/ayah/${sNum}:${aNum}/id.jalalayn`);
+        const d = await r.json();
+        setJalalainMap(p=>({...p,[key]: d.data?.text||"Tafsir Jalalain tidak tersedia untuk ayat ini."}));
+      } catch {
+        setJalalainMap(p=>({...p,[key]:"Tafsir Jalalain tidak tersedia."}));
+      }
+    }
+    setOpenJalalain(p=>({...p,[idx]:!p[idx]}));
+  };
+
+  /* ─── Hadist & Asbabun Nuzul via Claude API ─── */
+  const toggleHadist = async (idx, sNum, aNum) => {
+    const key = `${sNum}:${aNum}`;
+    if(!hadistMap[key]) {
+      setHadistMap(p=>({...p,[key]:"loading"}));
+      try {
+        const prompt = `Berikan hadist dari Bukhari dan Muslim yang berkaitan dengan Surah ke-${sNum} ayat ${aNum} dalam Al-Quran, beserta asbabun nuzulnya (sebab turun ayat). Format jawaban HANYA JSON seperti ini, tanpa preamble:
+{"hadist":[{"sumber":"HR. Bukhari No. ...","teks":"..."},{"sumber":"HR. Muslim No. ...","teks":"..."}],"asbabunNuzul":"..."}
+Jika tidak ada hadist atau asbabun nuzul spesifik, tulis keterangan singkat yang relevan. Gunakan Bahasa Indonesia.`;
+        const resp = await fetch("https://api.anthropic.com/v1/messages", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({
+            model:"claude-sonnet-4-20250514",
+            max_tokens:1000,
+            messages:[{role:"user",content:prompt}]
+          })
+        });
+        const data = await resp.json();
+        const txt = (data.content||[]).map(c=>c.text||"").join("").replace(/```json|```/g,"").trim();
+        try {
+          const parsed = JSON.parse(txt);
+          setHadistMap(p=>({...p,[key]:parsed}));
+        } catch {
+          setHadistMap(p=>({...p,[key]:{hadist:[],asbabunNuzul:txt||"Data tidak tersedia."}}));
+        }
+      } catch {
+        setHadistMap(p=>({...p,[key]:{hadist:[],asbabunNuzul:"Data tidak dapat dimuat."}}));
+      }
+    }
+    setOpenHadist(p=>({...p,[idx]:!p[idx]}));
+  };
+
+  /* ─── Audio queue ended ─── */
+  const handleEnded = useCallback(() => {
+    const q = queueRef.current;
+    if(!q.length){ setIsPlaying(false); return; }
+    const next = qIdxRef.current + 1;
+    if(next < q.length){
+      qIdxRef.current = next;
+      setPlayingNum(q[next]);
+      // update progress for juz or surah
+      if(pJuzRef.current !== null){
+        setJuzProg(p=>({...p, cur: next+1}));
+      }
+      if(pSurahRef.current !== null){
+        setSurahProg(p=>({...p, cur: next+1}));
+      }
+      audioRef.current.src = `${AUDIO}/${q[next]}.mp3`;
+      audioRef.current.play().catch(()=>{});
+    } else {
+      queueRef.current=[]; qIdxRef.current=0;
+      pJuzRef.current=null; pSurahRef.current=null;
+      setIsPlaying(false); setPlayingJuz(null); setPlayingSurah(null);
+      setJuzProg({cur:0,total:0}); setSurahProg({cur:0,total:0});
+    }
+  },[]);
+
+  /* ─── Play single ayah ─── */
+  const playSingle = (num) => {
+    queueRef.current=[]; qIdxRef.current=0; pJuzRef.current=null; pSurahRef.current=null;
+    setPlayingJuz(null); setPlayingSurah(null); setJuzProg({cur:0,total:0}); setSurahProg({cur:0,total:0});
+    if(playingNum===num && isPlaying){ audioRef.current.pause(); setIsPlaying(false); return; }
+    audioRef.current.src = `${AUDIO}/${num}.mp3`;
+    audioRef.current.play().catch(()=>{});
+    setPlayingNum(num); setIsPlaying(true);
+  };
+
+  /* ─── Play full juz ─── */
+  const playJuz = async (n) => {
+    if(pJuzRef.current===n){
+      if(isPlaying){ audioRef.current.pause(); setIsPlaying(false); }
+      else { audioRef.current.play().catch(()=>{}); setIsPlaying(true); }
+      return;
+    }
+    setLoadingJuz(n);
+    pSurahRef.current=null; setPlayingSurah(null); setSurahProg({cur:0,total:0});
+    try {
+      const r = await fetch(`${API}/juz/${n}/quran-uthmani`);
+      const d = await r.json();
+      const nums = (d.data?.ayahs||[]).map(a=>a.number);
+      if(!nums.length) return;
+      queueRef.current=nums; qIdxRef.current=0; pJuzRef.current=n;
+      setPlayingJuz(n); setPlayingNum(nums[0]); setJuzProg({cur:1,total:nums.length});
+      audioRef.current.src=`${AUDIO}/${nums[0]}.mp3`;
+      audioRef.current.play().catch(()=>{});
+      setIsPlaying(true);
+    } catch(e){ console.error(e); }
+    setLoadingJuz(null);
+  };
+
+  /* ─── Stop ─── */
+  const stopAudio = () => {
+    audioRef.current?.pause();
+    queueRef.current=[]; qIdxRef.current=0; pJuzRef.current=null; pSurahRef.current=null;
+    setPlayingNum(null); setIsPlaying(false); setPlayingJuz(null); setPlayingSurah(null);
+    setJuzProg({cur:0,total:0}); setSurahProg({cur:0,total:0});
+  };
+
+  /* ─── Play full surah ─── */
+  const playSurahFull = () => {
+    if(!ayahs.length || !selSurah) return;
+    // toggle if already playing this surah
+    if(pSurahRef.current===selSurah){
+      if(isPlaying){ audioRef.current.pause(); setIsPlaying(false); }
+      else { audioRef.current.play().catch(()=>{}); setIsPlaying(true); }
+      return;
+    }
+    // reset juz mode
+    pJuzRef.current=null; setPlayingJuz(null); setJuzProg({cur:0,total:0});
+    const nums = ayahs.map(a=>a.number);
+    queueRef.current=nums; qIdxRef.current=0; pSurahRef.current=selSurah;
+    setPlayingSurah(selSurah); setPlayingNum(nums[0]); setSurahProg({cur:1,total:nums.length});
+    audioRef.current.src=`${AUDIO}/${nums[0]}.mp3`;
+    audioRef.current.play().catch(()=>{});
+    setIsPlaying(true);
+  };
+
+  const doTogglePlay = () => {
+    if(!audioRef.current) return;
+    if(isPlaying){ audioRef.current.pause(); setIsPlaying(false); }
+    else { audioRef.current.play().catch(()=>{}); setIsPlaying(true); }
+  };
+
+  /* ─── Terjemahan audio controls ─── */
+  const playTranslation = (sNum) => {
+    if(!transRef.current) return;
+    // same surah — toggle
+    if(transPlaying===sNum){
+      if(transIsPlaying){ transRef.current.pause(); setTransIsPlaying(false); }
+      else { transRef.current.play().catch(()=>{}); setTransIsPlaying(true); }
+      return;
+    }
+    // new surah
+    transRef.current.src = transUrl(sNum);
+    transRef.current.load();
+    transRef.current.play().catch(()=>{});
+    setTransPlaying(sNum); setTransIsPlaying(true); setTransCur(0); setTransDur(0);
+  };
+
+  const stopTranslation = () => {
+    if(!transRef.current) return;
+    transRef.current.pause();
+    transRef.current.src = "";
+    setTransPlaying(null); setTransIsPlaying(false); setTransCur(0); setTransDur(0);
+  };
+
+  const seekTrans = (e) => {
+    if(!transRef.current || !transDur) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    transRef.current.currentTime = ratio * transDur;
+  };
+
+  const fmtTime = (s) => {
+    if(!s || isNaN(s)) return "0:00";
+    const m = Math.floor(s/60), sec = Math.floor(s%60);
+    return `${m}:${sec.toString().padStart(2,"0")}`;
+  };
+
+  /* ─── Bookmark ─── */
+  const toggleBM = (sNum, aNum) => {
+    const key=`${sNum}:${aNum}`;
+    setBookmarks(prev=>{
+      const next = prev.includes(key) ? prev.filter(k=>k!==key) : [...prev,key];
+      saveLS("q_bm", next);
+      return next;
+    });
+  };
+
+  /* ─── Derived ─── */
+  const filtered = surahs.filter(s=>
+    !search ||
+    s.englishName?.toLowerCase().includes(search.toLowerCase()) ||
+    s.name?.includes(search) ||
+    String(s.number).includes(search)
+  );
+  const curInfo = surahs.find(s=>s.number===selSurah);
+  const nowLabel = playingJuz
+    ? `Juz ${playingJuz} — ${juzProg.cur} / ${juzProg.total} ayat`
+    : playingSurah
+      ? `${curInfo?.englishName||"Surah"} — ${surahProg.cur} / ${surahProg.total} ayat`
+      : curInfo ? curInfo.englishName : `Ayat #${playingNum}`;
+
+  /* ─── Render ─── */
+  return (
+    <div className="app">
+      <audio ref={audioRef} onEnded={handleEnded} />
+      <audio
+        ref={transRef}
+        onTimeUpdate={()=>{ if(transRef.current) setTransCur(transRef.current.currentTime); }}
+        onLoadedMetadata={()=>{ if(transRef.current) setTransDur(transRef.current.duration); }}
+        onEnded={()=>{ setTransIsPlaying(false); setTransCur(0); }}
+      />
+
+      {/* ═══════════════════════ SIDEBAR ═══════════════════════ */}
+      <div className="sb">
+        <div className="sb-brand">
+          <div className="sb-brand-row">
+            <div className="sb-icon"><span style={{color:"var(--gold)"}}>☽</span></div>
+            <div>
+              <div style={{fontSize:14,fontWeight:500,color:"var(--text-primary)"}}>Al-Quran Digital</div>
+              <div style={{fontSize:10,color:"var(--text-tertiary)"}}>Rasm Utsmani · Versi Madinah</div>
+            </div>
+          </div>
+          <input
+            type="search" className="sb-search"
+            placeholder="Cari nama surah..."
+            value={search} onChange={e=>setSearch(e.target.value)}
+          />
+        </div>
+
+        <div className="tabs">
+          {[["surah","Surah (114)"],["juz","Juz (30)"]].map(([id,lbl])=>(
+            <button key={id} className={`tab ${tab===id?"on":""}`} onClick={()=>setTab(id)}>{lbl}</button>
+          ))}
+        </div>
+
+        <div className="list">
+          {tab==="surah"
+            ? filtered.map(s=>(
+                <div key={s.number} className={`item ${selSurah===s.number?"on":""}`} onClick={()=>loadSurah(s.number)}>
+                  <div className={`nbadge ${selSurah===s.number?"on":""}`}>{s.number}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12,fontWeight:500,color:"var(--text-primary)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.englishName}</div>
+                    <div style={{fontSize:10,color:"var(--text-tertiary)"}}>{s.revelationType==="Meccan"?"Makkiyah":"Madaniyah"} · {s.numberOfAyahs} ayat</div>
+                  </div>
+                  <div style={{fontFamily:"var(--font-ar)",fontSize:16,color:selSurah===s.number?"var(--green)":"var(--text-tertiary)",direction:"rtl",flexShrink:0}}>{s.name}</div>
+                </div>
+              ))
+            : Array.from({length:30},(_,i)=>i+1).map(n=>(
+                <div key={n} className={`item ${playingJuz===n?"on":""}`} style={{borderLeftColor:playingJuz===n?"var(--green)":"transparent"}}>
+                  <div className={`nbadge jbadge ${playingJuz===n?"on":""}`}>{n}</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:12,fontWeight:500,color:"var(--text-primary)"}}>Juz {n}</div>
+                    <div style={{fontSize:13,color:"var(--text-tertiary)",fontFamily:"var(--font-ar)",direction:"rtl"}}>{JUZ_LABELS[n-1]}</div>
+                  </div>
+                  <button className={`ibtn ${playingJuz===n&&isPlaying?"on":""}`} style={{width:28,height:28,fontSize:13}} onClick={()=>playJuz(n)} title={`Putar Juz ${n}`}>
+                    {loadingJuz===n
+                      ? <i className="ti ti-loader" />
+                      : <i className={`ti ${playingJuz===n&&isPlaying?"ti-player-pause":"ti-player-play"}`} />}
+                  </button>
+                </div>
+              ))
+          }
+        </div>
+      </div>
+
+      {/* ═══════════════════════ MAIN ═══════════════════════ */}
+      <div className="main">
+
+        {/* Top bar */}
+        <div className="topbar">
+          <span className="topbar-label">
+            {curInfo
+              ? `${curInfo.englishName} — ${curInfo.englishNameTranslation}`
+              : "Al-Quran Digital · Pilih surah untuk mulai membaca"}
+          </span>
+          <button className="topbtn" onClick={()=>setFs(s=>Math.max(18,s-2))} title="Perkecil teks Arab" style={{fontSize:11,fontWeight:500}}>A-</button>
+          <button className="topbtn" onClick={()=>setFs(s=>Math.min(42,s+2))} title="Perbesar teks Arab" style={{fontSize:13,fontWeight:500}}>A+</button>
+          <button className="topbtn" onClick={()=>setDark(d=>!d)} title={dark?"Mode Terang":"Mode Gelap"} style={{fontSize:16}}>
+            <i className={`ti ${dark?"ti-sun":"ti-moon"}`} />
+          </button>
+          <div style={{fontSize:11,color:"var(--text-tertiary)",borderLeft:"0.5px solid var(--border)",paddingLeft:10,marginLeft:2}}>
+            <i className="ti ti-bookmark" style={{fontSize:13,color:"var(--gold)"}} /> {bookmarks.length}
+          </div>
+        </div>
+
+        {!selSurah ? (
+          /* Welcome */
+          <div className="welcome">
+            <div style={{fontSize:38,fontFamily:"var(--font-ar)",color:"var(--green)",direction:"rtl",lineHeight:2}}>
+              بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+            </div>
+            <div style={{fontSize:24,fontWeight:500,color:"var(--text-primary)"}}>Al-Quran Digital Versi Madinah</div>
+            <div style={{fontSize:14,color:"var(--text-secondary)",lineHeight:2}}>
+              Rasm Utsmani · Terjemahan Bahasa Indonesia · Tafsir Muntakhab · MP3 Murattal 30 Juz
+            </div>
+            <div className="feat-chips">
+              {[["ti-book-2","114 Surah"],["ti-list-numbers","30 Juz MP3"],["ti-player-play","Putar Surah Penuh"],["ti-language","Terjemahan ID"],["ti-book","Tafsir Jalalain"],["ti-certificate","Hadist Bukhari-Muslim"],["ti-history","Asbabun Nuzul"],["ti-bookmark","Bookmark"],["ti-moon","Mode Gelap"]].map(([ic,txt])=>(
+                <div key={txt} className="chip">
+                  <i className={`ti ${ic}`} style={{color:"var(--green)",fontSize:16}} />
+                  {txt}
+                </div>
+              ))}
+            </div>
+            <p style={{fontSize:12,color:"var(--text-tertiary)",marginTop:8}}>
+              ← Pilih surah untuk membaca · Klik ▶ pada Juz untuk memutar · [Space] play/pause
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Surah header */}
+            {curInfo && (
+              <div className="surah-hdr">
+                <div>
+                  <div style={{fontSize:18,fontWeight:500,color:"#fff"}}>{curInfo.englishName}</div>
+                  <div style={{fontSize:12,color:"rgba(255,255,255,0.6)",marginTop:3}}>
+                    {curInfo.englishNameTranslation} &nbsp;·&nbsp; Surah ke-{curInfo.number} &nbsp;·&nbsp; {curInfo.numberOfAyahs} Ayat &nbsp;·&nbsp; {curInfo.revelationType==="Meccan"?"Makkiyah":"Madaniyah"}
+                  </div>
+                </div>
+                <div style={{fontFamily:"var(--font-ar)",fontSize:30,color:"var(--gold)",direction:"rtl"}}>{curInfo.name}</div>
+              </div>
+            )}
+
+            {/* Surah full play bar */}
+            {!loading && ayahs.length>0 && (
+              <div className="surah-play-bar">
+                <button
+                  className={`surah-play-btn ${playingSurah===selSurah&&isPlaying?"playing":""}`}
+                  onClick={playSurahFull}
+                  title="Putar seluruh surah"
+                >
+                  <i className={`ti ${playingSurah===selSurah&&isPlaying?"ti-player-pause":"ti-player-play"}`} style={{fontSize:12}} />
+                  {playingSurah===selSurah&&isPlaying ? "Sedang Diputar" : "Putar Surah Penuh"}
+                </button>
+                {playingSurah===selSurah && surahProg.total>0 ? (
+                  <>
+                    <div className="surah-progress">
+                      <div className="surah-progress-fill" style={{width:`${(surahProg.cur/surahProg.total)*100}%`}} />
+                    </div>
+                    <span className="surah-progress-lbl">{surahProg.cur}/{surahProg.total} ayat</span>
+                  </>
+                ) : (
+                  <span style={{fontSize:11,color:"var(--text-tertiary)",marginLeft:4}}>{ayahs.length} ayat · Mishary Alafasy</span>
+                )}
+              </div>
+            )}
+
+            {/* Terjemahan audio bar */}
+            {!loading && ayahs.length>0 && (
+              <div className="trans-play-bar">
+                <button
+                  className={`trans-play-btn ${transPlaying===selSurah&&transIsPlaying?"playing":""}`}
+                  onClick={()=>playTranslation(selSurah)}
+                  title="Putar terjemahan suara (Mishary Alafasy + Indonesia)"
+                >
+                  <i className={`ti ${transPlaying===selSurah&&transIsPlaying?"ti-player-pause":"ti-player-play"}`} style={{fontSize:12}} />
+                  {transPlaying===selSurah&&transIsPlaying ? "Terjemahan Diputar" : "▶ Putar Terjemahan"}
+                </button>
+                {transPlaying===selSurah ? (
+                  <>
+                    <div className="trans-progress" onClick={seekTrans} title="Klik untuk loncat">
+                      <div className="trans-progress-fill" style={{width:transDur?`${(transCur/transDur)*100}%`:"0%"}} />
+                    </div>
+                    <span className="trans-time-lbl">{fmtTime(transCur)} / {fmtTime(transDur)}</span>
+                    <button onClick={stopTranslation} style={{width:24,height:24,borderRadius:"50%",background:"rgba(200,169,81,0.15)",border:"0.5px solid var(--gold)",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--gold)",fontSize:11,flexShrink:0}} title="Stop terjemahan">
+                      <i className="ti ti-player-stop" />
+                    </button>
+                  </>
+                ) : (
+                  <span style={{fontSize:11,color:"var(--text-tertiary)",marginLeft:4}}>Mishary Alafasy · Arab + Terjemah Indonesia</span>
+                )}
+              </div>
+            )}
+
+            {/* Content */}
+            <div className="content">
+              {loading ? (
+                <div className="loader">
+                  <i className="ti ti-loader" style={{fontSize:34,display:"block",marginBottom:12,color:"var(--green)"}} />
+                  Memuat surah, harap tunggu...
+                </div>
+              ) : (
+                <>
+                  {selSurah!==1 && selSurah!==9 && (
+                    <div className="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
+                  )}
+                  {ayahs.map((ayah,idx)=>{
+                    const key=`${selSurah}:${ayah.numberInSurah}`;
+                    const tafsirTxt=tafsirMap[key];
+                    const thisPlaying = playingNum===ayah.number && isPlaying && !playingJuz;
+                    const isBM = bookmarks.includes(key);
+                    return (
+                      <div key={ayah.number} className="acard" style={{borderLeftWidth:thisPlaying?3:undefined,borderLeftColor:thisPlaying?"var(--green)":undefined}}>
+
+                        {/* Header row */}
+                        <div className="acard-hdr">
+                          <div style={{display:"flex",alignItems:"center",gap:8}}>
+                            <div style={{width:28,height:28,borderRadius:"50%",background:"var(--green)",color:"var(--gold)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:500,flexShrink:0}}>
+                              {ayah.numberInSurah}
+                            </div>
+                            <span style={{fontSize:11,color:"var(--text-tertiary)"}}>{curInfo?.englishName} : {ayah.numberInSurah}</span>
+                          </div>
+                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                            <button
+                              onClick={()=>toggleBM(selSurah,ayah.numberInSurah)}
+                              style={{width:26,height:26,borderRadius:"50%",border:`0.5px solid ${isBM?"var(--gold)":"var(--border)"}`,background:isBM?"rgba(200,169,81,0.12)":"transparent",color:isBM?"var(--gold)":"var(--text-tertiary)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}
+                              title="Tandai ayat"
+                            >
+                              <i className="ti ti-bookmark" />
+                            </button>
+                            <button className={`expand-btn ${openJalalain[idx]?"on":""}`} onClick={()=>toggleJalalain(idx,selSurah,ayah.numberInSurah)} title="Tafsir Jalalain">
+                              <i className="ti ti-book" style={{fontSize:11}} /> Jalalain
+                            </button>
+                            <button className={`expand-btn ${openHadist[idx]?"on":""}`} onClick={()=>toggleHadist(idx,selSurah,ayah.numberInSurah)} title="Hadist & Asbabun Nuzul">
+                              <i className="ti ti-certificate" style={{fontSize:11}} /> Hadist
+                            </button>
+                            <button className={`ibtn ${thisPlaying?"on":""}`} style={{width:26,height:26,fontSize:12}} onClick={()=>playSingle(ayah.number)} title={thisPlaying?"Pause":"Putar ayat"}>
+                              <i className={`ti ${thisPlaying?"ti-player-pause":"ti-player-play"}`} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Arabic */}
+                        <div className="acard-arabic" style={{fontSize:fs,lineHeight:2.1}}>
+                          {ayah.arabic}
+                        </div>
+
+                        {/* Translation */}
+                        <div className="acard-trans">
+                          <div className="section-lbl">
+                            <i className="ti ti-language" style={{fontSize:11}} /> Terjemahan
+                          </div>
+                          <p style={{fontSize:14,color:"var(--text-secondary)",lineHeight:1.8,margin:0}}>{ayah.translation}</p>
+                        </div>
+
+                        {/* Tafsir Jalalain */}
+                        {openJalalain[idx] && (
+                          <div className="acard-jalalain">
+                            <div className="section-lbl"><i className="ti ti-book" style={{fontSize:11}} /> Tafsir Jalalain</div>
+                            {jalalainMap[`${selSurah}:${ayah.numberInSurah}`]==="loading"
+                              ? <div className="loading-shimmer" />
+                              : <p style={{fontSize:13,color:"var(--text-secondary)",lineHeight:1.9,margin:0}}>
+                                  {jalalainMap[`${selSurah}:${ayah.numberInSurah}`]||"Memuat..."}
+                                </p>
+                            }
+                          </div>
+                        )}
+
+                        {/* Hadist Bukhari-Muslim & Asbabun Nuzul */}
+                        {openHadist[idx] && (
+                          <div className="acard-hadist">
+                            <div className="section-lbl"><i className="ti ti-certificate" style={{fontSize:11}} /> Hadist Bukhari &amp; Muslim · Asbabun Nuzul</div>
+                            {hadistMap[`${selSurah}:${ayah.numberInSurah}`]==="loading"
+                              ? <div><div className="loading-shimmer" style={{marginBottom:6}} /><div className="loading-shimmer" style={{width:"60%"}} /></div>
+                              : (() => {
+                                  const hd = hadistMap[`${selSurah}:${ayah.numberInSurah}`];
+                                  if(!hd) return <span style={{fontSize:12,color:"var(--text-tertiary)"}}>Memuat...</span>;
+                                  return (
+                                    <div>
+                                      {(hd.hadist||[]).map((h,hi)=>(
+                                        <div key={hi} className="hadist-item">
+                                          <div className="hadist-source"><i className="ti ti-book-2" style={{fontSize:10}} />{h.sumber}</div>
+                                          <div className="hadist-text">{h.teks}</div>
+                                        </div>
+                                      ))}
+                                      {hd.asbabunNuzul && (
+                                        <div className="asbab-item">
+                                          <div className="asbab-lbl"><i className="ti ti-history" style={{fontSize:10}} /> Asbabun Nuzul (Sebab Turunnya Ayat)</div>
+                                          <div className="hadist-text">{hd.asbabunNuzul}</div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })()
+                            }
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Player bar */}
+        {playingNum!==null && (
+          <div className="player">
+            <div className="player-icon">
+              <i className="ti ti-music" style={{fontSize:17,color:"var(--green)"}} />
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:13,fontWeight:500,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{nowLabel}</div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.5)"}}>Mishary Rashid Alafasy · Murattal Hafs</div>
+            </div>
+            {(playingJuz && juzProg.total>0) && (
+              <>
+                <div className="progress-track">
+                  <div className="progress-fill" style={{width:`${(juzProg.cur/juzProg.total)*100}%`}} />
+                </div>
+                <span style={{fontSize:11,color:"rgba(255,255,255,0.6)",flexShrink:0}}>{Math.round((juzProg.cur/juzProg.total)*100)}%</span>
+              </>
+            )}
+            {(playingSurah && surahProg.total>0) && (
+              <>
+                <div className="progress-track">
+                  <div className="progress-fill" style={{width:`${(surahProg.cur/surahProg.total)*100}%`}} />
+                </div>
+                <span style={{fontSize:11,color:"rgba(255,255,255,0.6)",flexShrink:0}}>{Math.round((surahProg.cur/surahProg.total)*100)}%</span>
+              </>
+            )}
+            <button onClick={doTogglePlay} style={{width:38,height:38,borderRadius:"50%",background:"var(--gold)",border:"none",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--green)",flexShrink:0,fontSize:17}}>
+              <i className={`ti ${isPlaying?"ti-player-pause":"ti-player-play"}`} />
+            </button>
+            <button onClick={stopAudio} style={{width:30,height:30,borderRadius:"50%",background:"rgba(255,255,255,0.1)",border:"0.5px solid rgba(255,255,255,0.25)",display:"flex",alignItems:"center",justifyContent:"center",color:"rgba(255,255,255,0.75)",flexShrink:0,fontSize:14}}>
+              <i className="ti ti-x" />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("sw.js")
+      .then(r=>console.log("SW registered"))
+      .catch(e=>console.log("SW error",e));
+  });
+}
+</script>
+</body>
+</html>
